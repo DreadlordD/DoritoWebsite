@@ -10,3 +10,128 @@ h1 {
 p {
     color: #ffa600;
 }
+
+/* Noise background for startup */
+.noise-bg {
+  position: fixed; /* Fixes it to the viewport */
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1; /* Pushes it behind your text/content */
+  background: linear-gradient(45deg, #1e07e9, #2d31ff, #0011ff); /* Your Color Ramp */
+}
+
+.noise-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  filter: url(#noise);
+  opacity: 0.15;
+  pointer-events: none;
+}
+
+/*End of Noise background for startup */
+
+.Dorito-Box{
+    box-sizing: border-box;
+    min-width: 400px; /* It can be wider, but not smaller than 400 */
+    width: fit-content; /* The window will grow to fit what's inside it */
+    min-height: 200px;
+    height: fit-content;
+    background-color:#c0c0c0;
+    position: absolute; top: 50%; left: 50%;
+    border: 3px slategray;
+    border-style: solid;
+    /* Top and Left are white (highlight) */
+    /* Bottom and Right are dark grey (shadow) */
+    border-color: #ffffff #808080 #808080 #ffffff;
+}
+
+.title-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, #000080, #1084d0);
+    padding: 3px;
+}
+
+.title-controls {
+    display: flex;
+    justify-content: right;
+    border-bottom: #ffffff7a solid;
+    border-width: 1px;
+    margin-bottom: 1px;
+}
+
+.fake-url-top-header {
+    display: flex;
+    justify-content: space-between;
+    background: #cacaca;
+}
+
+.fake-url-field {
+    display: flex;
+    flex-grow: 1; /* Fills the middle space */
+    background: white;
+    color: black;
+    padding: 2px 8px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    overflow-x: auto; /* Adds a scrollbar if the text is too long */
+    white-space: nowrap; /* Prevents the text from jumping to a second line */
+    
+    /* The "Sunken" Retro Look */
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080; 
+    border-bottom: #2d31ff;
+
+    cursor: help;
+}
+
+.search-input {
+    flex-grow: 1; /* This makes the input fill the available space */
+    background: white;
+    font-family: 'Courier New', monospace;
+    padding: 2px 5px;
+    
+    /* Inverted bevel: Dark on top/left, White on bottom/right */
+    border: 2px solid;
+    border-color: #808080 #ffffff #ffffff #808080; 
+}
+
+.window-btn {
+    width: 16px;
+    height: 14px;
+    font-size: 9px;
+    font-weight: bold;
+    background: #c0c0c0;
+    border: 1px solid;
+    /* The "Pop Out" effect */
+    border-color: #ffffff #808080 #808080 #ffffff;
+    cursor: pointer;
+}
+
+.go-btn {
+    padding: 2px 10px;
+    background: #c0c0c0;
+    cursor: pointer;
+    font-weight: bold;
+    /* Standard button bevel */
+    border: 2px solid;
+    border-color: #ffffff #808080 #808080 #ffffff;
+}
+
+.go-btn:active {
+    /* This makes the button "sink" when you click it! */
+    border-color: #808080 #ffffff #ffffff #808080;
+}
+
+.title-bar {
+    border-bottom: 1px solid #808080; /* Dark shadow line */
+}
+
+/* Then the bar below it starts with a highlight */
+.address-bar {
+    border-top: 1px solid #ffffff; /* Light highlight line */
+}

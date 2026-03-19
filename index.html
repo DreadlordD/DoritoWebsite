@@ -6,7 +6,39 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Dorito</h1>
-    <p>HELLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO</p>
+
+    <div class="noise-bg"></div>
+
+    <main>
+        <h1>Dorito</h1>
+        <p>HELLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO</p>
+    </main>
+    <div class="Dorito-Box">
+        <div class="fake-url-top-header"> Dorito OS Browser
+            <div class="title-controls">
+                <button class="window-btn">_</button>
+                <button class="window-btn">X</button>
+            </div>
+        </div>
+        <div class="address-bar">
+            <div class="fake-url-field">
+                https://dorito.net
+            </div>
+        </div>
+        <div class="window-content">
+            <p>testbox</p>
+        </div>
+    </div>
+    
+    
+
+    <svg style="display:none;">
+      <filter id="noise">
+        <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" />
+        <feColorMatrix type="saturate" values="0" />
+      </filter>
+    </svg>
+    
+
 </body>
 </html>
