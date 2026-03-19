@@ -18,7 +18,7 @@ main {
 }
 
 body {
-    background-image: url('Media/background.gif');
+    background-image: url('media/background.gif');
     background-size: cover;      /* Makes the image fill the whole screen */
     background-position: center; /* Keeps the center of the image visible */
     background-repeat: no-repeat;
