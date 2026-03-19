@@ -8,14 +8,32 @@
 </head>
 <body>
 
-    <main>
+    <header>
 
+    </header>
+
+    <!-- Icons for the desktop -->
+    <main>
+        <div class="desktop-icon" data-target="spinning-dorito">
+            <img src="media/SpinningDorito_pixel.gif" alt="Icon">
+            <span class="icon-label">Spinning Dorito</span>
+        </div>
+        <div class="desktop-icon" data-target="browser">
+            <img src="media/Browser icon.png" alt="Icon">
+            <span class="icon-label">Dorito OS Browser</span>
+        </div>
+        <div class="desktop-icon" data-target="alone-nugget">
+            <img src="media/Alone nugget.png" alt="Icon">
+            <span class="icon-label">Alone nugget</span>
+        </div>
     </main>
+
+    <!-- Program windows themselves. Not the taskbar -->
     <div class="Program-Box" id="browser">
         <div class="fake-url-top-header drag-handle" id="ProgramHeader"> Dorito OS Browser
             <div class="title-controls">
-                <button class="window-btn minimize-btn" id="closeBtn">_</button>
-                <button class="close-btn" id="closeBtn">X</button>
+                <button class="window-btn minimize-btn">_</button>
+                <button class="close-btn">X</button>
             </div>
         </div>
         <div class="address-bar">
@@ -34,7 +52,7 @@
     <div class="Program-Box" id="spinning-dorito" style="display:none;">
         <div class="fake-url-top-header drag-handle"> Spinning Dorito
             <div class="title-controls">
-                <button class="close-btn" id="closeBtn">X</button>
+                <button class="close-btn">X</button>
             </div>
         </div>
         <div class="window-content">
@@ -43,7 +61,25 @@
             </div>
         </div>
     </div>
+
+    <div class="Program-Box" id="alone-nugget" style="display:none;">
+        <div class="fake-url-top-header drag-handle"> Alone nugget (he is very lonely)
+            <div class="title-controls">
+                <button class="close-btn">X</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <button class="window-btn mute-btn" onclick="toggleMute(this)">🔊</button>
+            <div class="Centered">
+                <video autoplay loop playsinline class="window-video" id="AloneNuggetVideo">
+                    <source src="media/alone_nugget.mp4" type="video/mp4">
+                    Your browser does not support the video tag. (im sorry)
+                </video>
+            </div>
+        </div>
+    </div>
     
+    <!-- Taskbar with taskbar buttons -->
     <div class="Taskbar">
         <div class="Taskbar-program">
             <button class="restore-btn" data-target="browser">
@@ -56,6 +92,12 @@
                 Spinning Dorito
             </button>
         </div>
+    
+        <div class="Taskbar-program">
+            <button class="restore-btn" data-target="alone-nugget">
+                Alone Nugget
+            </button>
+        </div>
     </div>
 </body>
 
@@ -66,90 +108,140 @@
 </html>
 
 <script>
-// 1. Setup all windows (Draggable & Close buttons)
-const allWindows = document.querySelectorAll('.Program-Box');
+
+    // This makes desktop icons open their matching windows
+    const desktopIcons = document.querySelectorAll('.desktop-icon');
+
+    desktopIcons.forEach(icon => {
+        icon.addEventListener('dblclick', () => { // Use 'click' or 'dblclick' for realism
+            const targetId = icon.getAttribute('data-target');
+            const targetWindow = document.getElementById(targetId);
+
+            if (targetWindow) {
+                targetWindow.style.display = 'block';
+                targetWindow.style.zIndex = "100";
+                const video = targetWindow.querySelector('video');
+                if (video) {
+                video.play().catch(error => {
+                    console.log("Playback failed. This usually happens if the user hasn't clicked anything yet.");
+                    });
+                }
+            }
+        });
+    });
+    // 1. Setup all windows (Draggable & Close buttons)
+    const allWindows = document.querySelectorAll('.Program-Box');
 
     allWindows.forEach(win => {
-        // 1. Setup the Close Button (X)
-        const closeBtn = win.querySelector('.close-btn');
-        if (closeBtn) {
-            closeBtn.onclick = function () {
-                win.style.display = 'none';
-            };
-        }
+        const video = win.querySelector('video'); // Find a video inside this window
 
-        // 2. Setup the Minimize Button (_)
-        const minBtn = win.querySelector('.minimize-btn');
-        if (minBtn) {
-            minBtn.onclick = function () {
-                // In a WebOS, minimizing usually just hides the window
-                // because the Taskbar button will bring it back!
-                win.style.display = 'none';
-            };
-        }
-
-        // 3. Setup Dragging
         const header = win.querySelector('.drag-handle');
         if (header) {
             dragElement(win, header);
         }
-    });
 
-// 2. Setup Taskbar Buttons (Toggle Open/Close)
-const restoreButtons = document.querySelectorAll('.restore-btn');
-
-restoreButtons.forEach(btn => {
-    btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-target');
-        const targetWindow = document.getElementById(targetId);
-
-        if (targetWindow) {
-            // Check if window is hidden
-            if (targetWindow.style.display === 'none' || targetWindow.style.display === '') {
-                targetWindow.style.display = 'block';
-                // Bring to front
-                allWindows.forEach(w => w.style.zIndex = "10");
-                targetWindow.style.zIndex = "100";
-            } else {
-                // If it's already visible, clicking the taskbar hides it!
-                targetWindow.style.display = 'none';
+        // Function to stop the video properly
+        const stopVideo = () => {
+            if (video) {
+                video.pause();
+                video.currentTime = 0; // Rewind to the start
             }
+        };
+
+        // CLOSE BUTTON
+        const closeBtn = win.querySelector('.close-btn');
+        if (closeBtn) {
+            closeBtn.onclick = function () {
+                win.style.display = 'none';
+                stopVideo(); // Stop the sound!
+            };
+        }
+
+        // MINIMIZE BUTTON
+        const minBtn = win.querySelector('.minimize-btn');
+        if (minBtn) {
+            minBtn.onclick = function () {
+                win.style.display = 'none';
+                stopVideo(); // Stop the sound!
+            };
         }
     });
-});
 
-// 3. The Universal Drag Function
-function dragElement(elmnt, header) {
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-    header.onmousedown = dragMouseDown;
+    // 2. Setup Taskbar Buttons (Toggle Open/Close)
+    const restoreButtons = document.querySelectorAll('.restore-btn');
 
-    function dragMouseDown(e) {
-        e = e || window.event;
-        e.preventDefault();
-        // Bring to front on click
-        allWindows.forEach(w => w.style.zIndex = "10");
-        elmnt.style.zIndex = "100";
-        
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        document.onmouseup = closeDragElement;
-        document.onmousemove = elementDrag;
+    // TASKBAR BUTTONS (To start the video when opened)
+    restoreButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.getAttribute('data-target');
+            const targetWindow = document.getElementById(targetId);
+            const video = targetWindow ? targetWindow.querySelector('video') : null;
+
+            if (targetWindow) {
+                if (targetWindow.style.display === 'none' || targetWindow.style.display === '') {
+                    targetWindow.style.display = 'block';
+                    if (video) {
+                        video.play().catch(error => {
+                            console.log("Autoplay blocked! User must interact first.");
+                        });
+                    }
+                } else {
+                    targetWindow.style.display = 'none';
+                    if (video) {
+                        video.pause();
+                        video.currentTime = 0;
+                    }
+                }
+            }
+        });
+    });
+
+    // 3. The Universal Drag Function
+    function dragElement(elmnt, header) {
+        let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+        header.onmousedown = dragMouseDown;
+
+        function dragMouseDown(e) {
+            e = e || window.event;
+            e.preventDefault();
+            // Bring to front on click
+            allWindows.forEach(w => w.style.zIndex = "10");
+            elmnt.style.zIndex = "100";
+
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            document.onmouseup = closeDragElement;
+            document.onmousemove = elementDrag;
+        }
+
+        function elementDrag(e) {
+            e = e || window.event;
+            e.preventDefault();
+            pos1 = pos3 - e.clientX;
+            pos2 = pos4 - e.clientY;
+            pos3 = e.clientX;
+            pos4 = e.clientY;
+            elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+            elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+        }
+
+        function closeDragElement() {
+            document.onmouseup = null;
+            document.onmousemove = null;
+        }
     }
 
-    function elementDrag(e) {
-        e = e || window.event;
-        e.preventDefault();
-        pos1 = pos3 - e.clientX;
-        pos2 = pos4 - e.clientY;
-        pos3 = e.clientX;
-        pos4 = e.clientY;
-        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-    }
-
-    function closeDragElement() {
-        document.onmouseup = null;
-        document.onmousemove = null;
+    function toggleMute(btn) {
+    // Finds the video inside the same window as the button
+    const win = btn.closest('.Program-Box');
+    const video = win.querySelector('video');
+    
+    if (video.muted) {
+        video.muted = false;
+        btn.innerText = "🔊";
+    } else {
+        video.muted = true;
+        btn.innerText = "🔇";
     }
 }
 </script>

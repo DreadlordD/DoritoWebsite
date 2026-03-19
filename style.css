@@ -12,6 +12,10 @@ header, footer {
   flex-shrink: 0; /* Prevents the top and bottom from getting squished */
 }
 
+header {
+    margin-top: 5%;
+}
+
 main {
   flex-grow: 1; /* Tells the middle section to take up the remaining space */
   overflow: hidden; /* Ensures this specific section doesn't push the page down */
@@ -198,7 +202,89 @@ p {
     background-color: #b98dff; /* Slightly darker to show it's being "pressed" */
 }
 
+.desktop-icon {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    cursor: pointer;
+    margin: 10px;
+    transition: background 0.1s;
+    border: 1px solid transparent;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none;      /* IE 10 and older */
+    user-select: none;         /* Modern browsers (Chrome, Firefox, etc.) */
+}
+
+.desktop-icon img {
+    width: 64px;
+    height: 64px;
+    /* margin-bottom: 5px; */
+}
+
+.desktop-icon span {
+    display: flex;
+    justify-content: center;
+    font-size: smaller;
+}
+
+.icon-label {
+    color: blueviolet;
+    font-size: 12px;
+    text-align: center;
+    font-family: 'Tahoma', sans-serif; /* XP's signature font */
+    text-shadow: 1px 1px 2px black; /* Makes text readable on any background */
+    padding: 2px 4px;
+    border-radius: 2px;
+}
+
+
+
+/* The "Selected" look */
+.desktop-icon:hover {
+    background-color: #4200ac86;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    animation: hoverFloat 1.5s ease-in-out infinite;
+}
+
+/* .desktop-icon:active .icon-label {
+    background-color: #4200ac86;
+    text-shadow: none;
+} */
+
+.desktop-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    flex-direction: column; /* Stack them vertically on the left */
+    flex-wrap: wrap;       /* Start a new column if they hit the bottom */
+    height: 90vh;          /* Keep them above the taskbar */
+    padding: 10px;
+}
+
 .Centered {
     display: flex;
     justify-content: center;
+}
+
+/* 1. Define the floating motion */
+@keyframes hoverFloat {
+    0% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-8px); /* Moves up 8 pixels */
+    }
+    100% {
+        transform: translateY(0px);
+    }
+}
+
+@keyframes shadowPulse {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(0.6); opacity: 0.1; }
 }
