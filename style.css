@@ -1,5 +1,28 @@
+
+
 body {
-    background-color: #242141;
+  margin: 0;
+  height: 100vh; /* 100% of the Viewport Height */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Keeps the scrollbars away */
+}
+
+header, footer {
+  flex-shrink: 0; /* Prevents the top and bottom from getting squished */
+}
+
+main {
+  flex-grow: 1; /* Tells the middle section to take up the remaining space */
+  overflow: hidden; /* Ensures this specific section doesn't push the page down */
+}
+
+body {
+    background-image: url('Media/background.gif');
+    background-size: cover;      /* Makes the image fill the whole screen */
+    background-position: center; /* Keeps the center of the image visible */
+    background-repeat: no-repeat;
+    background-attachment: fixed; /* Keeps it from moving if things scroll */
     font-family: Arial, sans-serif;
 }
 
@@ -8,44 +31,25 @@ h1 {
 }
 
 p {
-    color: #ffa600;
+    color: #eeff00;
 }
 
-/* Noise background for startup */
-.noise-bg {
-  position: fixed; /* Fixes it to the viewport */
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1; /* Pushes it behind your text/content */
-  background: linear-gradient(45deg, #1e07e9, #2d31ff, #0011ff); /* Your Color Ramp */
-}
-
-.noise-bg::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  filter: url(#noise);
-  opacity: 0.15;
-  pointer-events: none;
-}
-
-/*End of Noise background for startup */
-
-.Dorito-Box{
+.Program-Box{
     box-sizing: border-box;
-    min-width: 400px; /* It can be wider, but not smaller than 400 */
+    min-width: auto; /* It can be wider, but not smaller than 400 */
     width: fit-content; /* The window will grow to fit what's inside it */
-    min-height: 200px;
+    min-height: auto;
     height: fit-content;
-    background-color:#c0c0c0;
-    position: absolute; top: 50%; left: 50%;
+    padding-bottom: 1%;
+    background-color:#26008fa6;
+    /*position: absolute; top: 50%; left: 50%;*/
     border: 3px slategray;
     border-style: solid;
     /* Top and Left are white (highlight) */
     /* Bottom and Right are dark grey (shadow) */
-    border-color: #ffffff #808080 #808080 #ffffff;
+    border-color: #0157c9 #0017e785 #0017e785;
+    position: absolute; top: 30%; right: 45%; /* lets the window move anywhere. */
+    z-index: 10;        /* This keeps it on top of your background. */
 }
 
 .title-bar {
@@ -59,22 +63,28 @@ p {
 .title-controls {
     display: flex;
     justify-content: right;
-    border-bottom: #ffffff7a solid;
+    border-bottom: #0017e77a solid;
     border-width: 1px;
     margin-bottom: 1px;
+}
+
+.title-controls > button {
+    background-color: #0157c9;
 }
 
 .fake-url-top-header {
     display: flex;
     justify-content: space-between;
-    background: #cacaca;
+    background: #0003cf70;
+    color:blueviolet;
+    cursor: move;
 }
 
 .fake-url-field {
     display: flex;
     flex-grow: 1; /* Fills the middle space */
-    background: white;
-    color: black;
+    background: #c2c2c27a;
+    color: rgba(99, 0, 192, 0.726);
     padding: 2px 8px;
     font-family: 'Courier New', Courier, monospace;
     font-size: 14px;
@@ -83,8 +93,7 @@ p {
     
     /* The "Sunken" Retro Look */
     border: 2px solid;
-    border-color: #808080 #ffffff #ffffff #808080; 
-    border-bottom: #2d31ff;
+    border-color: #0157c9 #0017e785 #0017e785;
 
     cursor: help;
 }
@@ -100,7 +109,7 @@ p {
     border-color: #808080 #ffffff #ffffff #808080; 
 }
 
-.window-btn {
+.window-btn, .close-btn {
     width: 16px;
     height: 14px;
     font-size: 9px;
@@ -134,4 +143,62 @@ p {
 /* Then the bar below it starts with a highlight */
 .address-bar {
     border-top: 1px solid #ffffff; /* Light highlight line */
+}
+
+.Taskbar {
+    display: flex;
+    justify-content: start;
+    border-width: 1px;
+    border-top: #26008fe3 solid;
+    background-color: #26008fa6;
+    height: 3%;
+    width: 100%;
+    top: 100%;
+}
+
+.Taskbar-program {
+    display: flex;
+    background: #a268ffef;
+    color: black;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 14px;
+    white-space: nowrap; /* Prevents the text from jumping to a second line */
+    height: auto;
+    width: 7.5%;
+    
+    /* The "Sunken" Retro Look */
+    border: 3px solid;
+    border-color: #caa8ff #a36aff #a36aff;
+    cursor: pointer;
+}
+
+.Taskbar-program-text {
+    display: flex;
+    margin: 0;
+}
+
+
+/* 1. Make the button itself invisible so only the text shows */
+.Taskbar-program button {
+    background: transparent;
+    border: none;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    font-family: inherit; /* Keeps your Courier New font */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 2. The Hover Effect: This makes the container "sink" when you point at it */
+.Taskbar-program:hover {
+    /* We swap the border colors to reverse the light and shadow */
+    border-color: #d1b6fd #b689ff #b689ff;
+    background-color: #b98dff; /* Slightly darker to show it's being "pressed" */
+}
+
+.Centered {
+    display: flex;
+    justify-content: center;
 }

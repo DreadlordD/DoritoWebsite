@@ -7,38 +7,148 @@
 </head>
 <body>
 
-    <div class="noise-bg"></div>
-
     <main>
-        <h1>Dorito</h1>
-        <p>HELLOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO</p>
+
     </main>
-    <div class="Dorito-Box">
-        <div class="fake-url-top-header"> Dorito OS Browser
+    <div class="Program-Box" id="browser">
+        <div class="fake-url-top-header drag-handle" id="ProgramHeader"> Dorito OS Browser
             <div class="title-controls">
-                <button class="window-btn">_</button>
-                <button class="window-btn">X</button>
+                <button class="window-btn minimize-btn" id="closeBtn">_</button>
+                <button class="close-btn" id="closeBtn">X</button>
             </div>
         </div>
         <div class="address-bar">
             <div class="fake-url-field">
-                https://dorito.net
+                https://dorito.net/HIIIII.html/
             </div>
         </div>
         <div class="window-content">
-            <p>testbox</p>
+            <p>My website is still under construction :)</p>
+            <div class="Centered">
+                <img src="media/SpinningDorito_pixel.gif" alt="Description of image" class="window-image">
+            </div>
+        </div>
+    </div>
+
+    <div class="Program-Box" id="spinning-dorito" style="display:none;">
+        <div class="fake-url-top-header drag-handle"> Spinning Dorito
+            <div class="title-controls">
+                <button class="close-btn" id="closeBtn">X</button>
+            </div>
+        </div>
+        <div class="window-content">
+            <div class="Centered">
+                <img src="media/SpinningDorito_pixel.gif" alt="Description of image" class="window-image">
+            </div>
         </div>
     </div>
     
+    <div class="Taskbar">
+        <div class="Taskbar-program">
+            <button class="restore-btn" data-target="browser">
+                Dorito OS Browser
+            </button>
+        </div>
     
-
-    <svg style="display:none;">
-      <filter id="noise">
-        <feTurbulence type="fractalNoise" baseFrequency="0.6" numOctaves="3" />
-        <feColorMatrix type="saturate" values="0" />
-      </filter>
-    </svg>
-    
-
+        <div class="Taskbar-program">
+            <button class="restore-btn" data-target="spinning-dorito">
+                Spinning Dorito
+            </button>
+        </div>
+    </div>
 </body>
+
+<footer>
+    
+</footer>
+
 </html>
+
+<script>
+// 1. Setup all windows (Draggable & Close buttons)
+const allWindows = document.querySelectorAll('.Program-Box');
+
+    allWindows.forEach(win => {
+        // 1. Setup the Close Button (X)
+        const closeBtn = win.querySelector('.close-btn');
+        if (closeBtn) {
+            closeBtn.onclick = function () {
+                win.style.display = 'none';
+            };
+        }
+
+        // 2. Setup the Minimize Button (_)
+        const minBtn = win.querySelector('.minimize-btn');
+        if (minBtn) {
+            minBtn.onclick = function () {
+                // In a WebOS, minimizing usually just hides the window
+                // because the Taskbar button will bring it back!
+                win.style.display = 'none';
+            };
+        }
+
+        // 3. Setup Dragging
+        const header = win.querySelector('.drag-handle');
+        if (header) {
+            dragElement(win, header);
+        }
+    });
+
+// 2. Setup Taskbar Buttons (Toggle Open/Close)
+const restoreButtons = document.querySelectorAll('.restore-btn');
+
+restoreButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const targetId = btn.getAttribute('data-target');
+        const targetWindow = document.getElementById(targetId);
+
+        if (targetWindow) {
+            // Check if window is hidden
+            if (targetWindow.style.display === 'none' || targetWindow.style.display === '') {
+                targetWindow.style.display = 'block';
+                // Bring to front
+                allWindows.forEach(w => w.style.zIndex = "10");
+                targetWindow.style.zIndex = "100";
+            } else {
+                // If it's already visible, clicking the taskbar hides it!
+                targetWindow.style.display = 'none';
+            }
+        }
+    });
+});
+
+// 3. The Universal Drag Function
+function dragElement(elmnt, header) {
+    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+    header.onmousedown = dragMouseDown;
+
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        // Bring to front on click
+        allWindows.forEach(w => w.style.zIndex = "10");
+        elmnt.style.zIndex = "100";
+        
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+    }
+
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+        elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+
+    function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
+}
+</script>
