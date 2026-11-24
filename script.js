@@ -9,6 +9,10 @@ const MEDIA={dorito:"media/SpinningDorito_pixel.gif",browser:"media/Browser_icon
    YOUR APPS. Add one object here to add an icon + popup.
      id, title, icon (a key from MEDIA), address (shown in the bar)
      w / h: window size in px (h is optional)    open:true = opens on load
+     pos:[x,y]  where the icon sits on the desktop, as fractions of the screen
+                (0 = left / top edge, 1 = right / bottom edge). Example [0.45,0.08]
+     fw / fh    OPTIONAL: the window opens this big as a fraction of the screen
+                (fw:.73 = 73% of the screen width) and its content scales to fit
      tabs: each tab has a label and a template:
         'html'   -> html:'<h2>Hi</h2><p>text or <img src=…></p>'
         'search' -> a web search box
@@ -18,14 +22,14 @@ const MEDIA={dorito:"media/SpinningDorito_pixel.gif",browser:"media/Browser_icon
    One tab = no tab strip is shown.
    =============================================================== */
 const APPS=[
-  {id:'browser',title:'Dorito OS Browser',icon:'browser',address:'dorito.net://HIIIII.html/',w:620,open:true,tabs:[
+  {id:'browser',title:'Dorito OS Browser',icon:'browser',address:'dorito.net://HIIIII.html/',w:620,open:true,pos:[.432,.386],fw:.73,fh:.8,tabs:[
     {label:'Search',template:'search'},
     {label:'Home',html:'<h2>Idk got lazy nothing here yet</h2><p>My website is still under construction :)</p><div class="c"><img src="media/SpinningDorito_pixel.gif" width="120" alt="Spinning dorito"></div>'}]},
-  {id:'dorito',title:'Spinning Dorito',icon:'dorito',address:'dorito.net://spinning',w:340,tabs:[
+  {id:'dorito',title:'Spinning Dorito',icon:'dorito',address:'dorito.net://spinning',w:340,pos:[.32,.541],tabs:[
     {label:'Dorito',html:'<div class="c"><img src="media/SpinningDorito_pixel.gif" width="200" alt="Spinning dorito"></div>'}]},
-  {id:'nugget',title:'Alone nugget (he is very lonely)',label:'Alone nugget',icon:'nugget',address:'dorito.net://alone-nugget',w:420,tabs:[
+  {id:'nugget',title:'Alone nugget (he is very lonely)',label:'Alone nugget',icon:'nugget',address:'dorito.net://alone-nugget',w:420,pos:[.641,.235],tabs:[
     {label:'Nugget',template:'video',src:'nuggetVideo'}]},
-  {id:'folder',title:'Dorito Folder',icon:'folder',address:'dorito.net://my-files',w:480,h:420,tabs:[
+  {id:'folder',title:'Dorito Folder',icon:'folder',address:'dorito.net://my-files',w:480,h:420,pos:[.456,.084],tabs:[
     {label:'Contents',template:'shake',count:35},
     {label:'Why?',html:'<h2>Doritos :D</h2><p>pls dont steal >:(</p>'}]},
 
@@ -65,7 +69,7 @@ const APPS=[
      The four sample pictures use nicknames from the MEDIA list so the gallery works out of the box.
      Delete them when you add your own.
      =============================================================== */
-  {id:'gallery',title:'Gallery',label:'Gallery',icon:'galleryIcon',address:'dorito.net://gallery',w:560,h:430,tabs:[
+  {id:'gallery',title:'Gallery',label:'Gallery',icon:'galleryIcon',address:'dorito.net://gallery',w:560,h:430,pos:[.231,.195],tabs:[
     {label:'Gallery',template:'gallery',folders:[
 
       {name:'Dorito things',folder:'media/gallery/dorito-things/',pixelated:true,images:[
@@ -168,19 +172,21 @@ const TEMPLATES={
 };
 
 /* desktop icons: drag them anywhere; positions are remembered */
-const ROW=142,COL=124;let saved={};try{saved=JSON.parse(localStorage.getItem('dorito-icons-2')||'{}')}catch(e){}
+const ROW=142,COL=124;
+const REMEMBER=false; /* true = each visitor's dragged icon positions are remembered; false = icons return to your pos:[x,y] formation every time the site opens */
+let saved={};if(REMEMBER){try{saved=JSON.parse(localStorage.getItem('dorito-icons-2')||'{}')}catch(e){}}
 const rows=Math.max(1,Math.floor((innerHeight-24)/ROW));
 APPS.forEach((a,i)=>{
   const c=el('div','cell'),b=el('button','icon');b.type='button';b.innerHTML='<img alt=""><span></span>';
   b.firstChild.src=MEDIA[a.icon];b.lastChild.textContent=a.label||a.title;c.appendChild(b);
   const place=(x,y)=>{c.style.left=Math.max(0,Math.min(innerWidth-104,x))+'px';c.style.top=Math.max(0,Math.min(innerHeight-122,y))+'px'};
-  const p=saved[a.id]||{x:12+Math.floor(i/rows)*COL,y:18+(i%rows)*ROW};place(p.x,p.y);
+  const p=saved[a.id]||(a.pos&&innerWidth>=700?{x:a.pos[0]*innerWidth,y:a.pos[1]*innerHeight}:{x:12+Math.floor(i/rows)*COL,y:18+(i%rows)*ROW});place(p.x,p.y);
   let last=0;
   c.addEventListener('pointerdown',e=>{
     const sx=e.clientX,sy=e.clientY,ox=c.offsetLeft,oy=c.offsetTop;let moved=false;c.setPointerCapture(e.pointerId);
     const mv=v=>{if(!moved&&Math.hypot(v.clientX-sx,v.clientY-sy)<6)return;moved=true;c.classList.add('drag');place(ox+v.clientX-sx,oy+v.clientY-sy)};
     const up=()=>{c.removeEventListener('pointermove',mv);c.removeEventListener('pointerup',up);c.removeEventListener('pointercancel',up);c.classList.remove('drag');
-      if(moved){saved[a.id]={x:c.offsetLeft,y:c.offsetTop};try{localStorage.setItem('dorito-icons-2',JSON.stringify(saved))}catch(e){}return}
+      if(moved){if(REMEMBER){saved[a.id]={x:c.offsetLeft,y:c.offsetTop};try{localStorage.setItem('dorito-icons-2',JSON.stringify(saved))}catch(e){}}return}
       const n=Date.now();if(n-last<450||matchMedia('(pointer:coarse)').matches)launch(a);last=n};
     c.addEventListener('pointermove',mv);c.addEventListener('pointerup',up);c.addEventListener('pointercancel',up)});
   b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();launch(a)}};
@@ -214,6 +220,11 @@ function launch(a){
     timer=setTimeout(()=>{load.classList.remove('on');st.textContent='';pg.appendChild((TEMPLATES[t.template||'html']||TEMPLATES.html)(t,ctx));fit()},820)};
   if(a.tabs.length>1)a.tabs.forEach((t,i)=>{const b=el('button','tab');b.type='button';b.role='tab';b.textContent=t.label;b.setAttribute('aria-selected',i===0);
     b.onclick=()=>{[...tabsEl.children].forEach(c=>c.setAttribute('aria-selected',c===b));show(t)};tabsEl.appendChild(b)});
+  if(a.fw&&innerWidth>=700){ /* open big: measure the normal size first so the content can scale up from it */
+    pg.appendChild((TEMPLATES[a.tabs[0].template||'html']||TEMPLATES.html)(a.tabs[0],ctx));
+    w._base={w:ctx.view.clientWidth,h:ctx.view.clientHeight};pg.innerHTML='';
+    const BW=Math.min(innerWidth-12,Math.round(a.fw*innerWidth)),BH=Math.min(innerHeight-12,Math.round((a.fh||a.fw)*innerHeight));
+    w.style.width=BW+'px';w.style.height=BH+'px';w.style.left=Math.round((innerWidth-BW)/2)+'px';w.style.top=Math.round((innerHeight-BH)/2)+'px';w._user=1;w.classList.add('sized')}
   show(a.tabs[0]);
   $('.x').onclick=()=>{clearTimeout(timer);w.remove();delete wins[a.id]};
   ['nw','ne','sw'].forEach(d=>{const h=el('i','rz '+d);h.dataset.dir=d;w.appendChild(h)});
