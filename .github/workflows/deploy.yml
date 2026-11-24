@@ -1,0 +1,51 @@
+# Publishes your site to GitHub Pages with comments and extra spacing stripped.
+# Your files in the repo stay exactly as you wrote them (comments included).
+# Save this file in your repo as:  .github/workflows/deploy.yml
+
+name: Deploy site (minified)
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Copy the site and strip comments
+        run: |
+          mkdir -p /tmp/dist
+          rsync -a --exclude='.git' --exclude='.github' --exclude='DORITO-DESKTOP-HOWTO.txt' ./ /tmp/dist/
+          npx --yes terser script.js --compress --mangle -o /tmp/dist/script.js
+          npx --yes csso-cli style.css --restructure-off --output /tmp/dist/style.css
+          npx --yes html-minifier-terser --collapse-whitespace --remove-comments index.html -o /tmp/dist/index.html
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: /tmp/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -1,0 +1,1 @@
+Upload the pictures for this gallery folder here, then add their file names to script.js.
