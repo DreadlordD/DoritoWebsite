@@ -22,7 +22,7 @@ const MEDIA={dorito:"media/SpinningDorito_pixel.gif",browser:"media/Browser_icon
    One tab = no tab strip is shown.
    =============================================================== */
 const APPS=[
-  {id:'browser',title:'Dorito OS Browser',icon:'browser',address:'dorito.net://HIIIII.html/',w:620,open:true,pos:[.432,.386],fw:.73,fh:.8,tabs:[
+  {id:'browser',title:'Dorito OS Browser',icon:'browser',address:'dorito.net://HIIIII.html/',w:620,open:true,pos:[.432,.386],fw:.243,fh:.267,tabs:[
     {label:'Search',template:'search'},
     {label:'Home',html:'<h2>Idk got lazy nothing here yet</h2><p>My website is still under construction :)</p><div class="c"><img src="media/SpinningDorito_pixel.gif" width="120" alt="Spinning dorito"></div>'}]},
   {id:'dorito',title:'Spinning Dorito',icon:'dorito',address:'dorito.net://spinning',w:340,pos:[.32,.541],tabs:[
