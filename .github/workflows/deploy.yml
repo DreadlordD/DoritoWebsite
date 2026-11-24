@@ -33,7 +33,7 @@ jobs:
           mkdir -p /tmp/dist
           rsync -a --exclude='.git' --exclude='.github' --exclude='DORITO-DESKTOP-HOWTO.txt' ./ /tmp/dist/
           npx --yes terser script.js --compress --mangle -o /tmp/dist/script.js
-          npx --yes csso-cli style.css --restructure-off --output /tmp/dist/style.css
+          npx --yes esbuild style.css --minify --outfile=/tmp/dist/style.css
           npx --yes html-minifier-terser --collapse-whitespace --remove-comments index.html -o /tmp/dist/index.html
 
       - uses: actions/upload-pages-artifact@v3
