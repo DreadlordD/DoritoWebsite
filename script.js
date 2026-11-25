@@ -77,15 +77,11 @@ const APPS=[
         {file:'nugget',title:'Lonely nugget :C'},
         {file:'browser',title:'Dorito OS Browser icon'},
         {file:'folder',title:'Dorito folder icon'}
-      ]},
-
-      {name:'Pictures',folder:'media/gallery/pictures/',images:[
-        /* add yours here, for example:
-           'my-photo.png',
-           {file:'beach.jpg', title:'Beach day'}, */
       ]}
 
-    ]}
+      /* Folders below are managed by add_to_gallery.py. Do not edit between the AUTO-GALLERY markers
+         by hand (you can, but the script rewrites that part). */
+    ].concat(/*AUTO-GALLERY-START*/[{"name": "Pictures", "folder": "media/gallery/pictures/", "images": [{"file": "SO-SAD.gif", "title": "SO SAD"}], "pixelated": true}]/*AUTO-GALLERY-END*/)}
   ]}
 ];
 
