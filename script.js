@@ -72,7 +72,7 @@ const APPS=[
      The four sample pictures use nicknames from the MEDIA list so the gallery works out of the box.
      Delete them when you add your own.
      =============================================================== */
-  {id:'gallery',title:'Gallery',label:'Gallery',icon:'galleryIcon',address:'dorito.net://gallery',w:560,h:430,pos:[.231,.195],tabs:[
+  {id:'gallery',title:'Gallery',label:'Gallery',icon:'galleryIcon',address:'dorito.net://gallery',w:560,h:430,fw:.62,fh:.8,pos:[.231,.195],tabs:[
     {label:'Gallery',template:'gallery',folders:[
 
       {name:'Dorito things',folder:'media/gallery/dorito-things/',pixelated:true,images:[
@@ -95,6 +95,7 @@ let z=10,count=0;
 const CLOGS=[],CSINK=[];
 function LOG(kind,what){const line=kind+' -> '+what;CLOGS.push(line);if(CLOGS.length>200)CLOGS.shift();CSINK.forEach(f=>f(line))}
 const Q=t=>"'"+t+"'";
+const fmtBytes=n=>n>=1073741824?(n/1073741824).toFixed(2)+' GB':n>=1048576?(n/1048576).toFixed(1)+' MB':Math.max(1,Math.round(n/1024))+' KB';
 document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest||t.closest('.cpage,.cclear'))return;
   const x=t.closest('button,a,input,select,.th,.tab,.icon,.cell'),nm=x&&((x.getAttribute('aria-label')||x.title||x.innerText||(x.querySelector&&x.querySelector('img')&&x.querySelector('img').alt)||x.value||'').trim().replace(/\s+/g,' ').slice(0,40));
   LOG('Click',nm?Q(nm):'position '+Math.round(e.clientX)+', '+Math.round(e.clientY))},true);
@@ -139,26 +140,29 @@ const TEMPLATES={
       const ext=(name.match(/\.([^.]+)$/)||[0,'png'])[1].toLowerCase(),jpg=/^jpe?g$/.test(ext),webp=ext==='webp',type=jpg?'image/jpeg':webp?'image/webp':'image/png',
         out=name.replace(/\.[^.]+$/,'')+'_'+N+(jpg?'.jpg':webp?'.webp':'.png');
       c.toBlob(bl=>{if(!bl)return;const u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download=out;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)},type,.92)};i.src=url};
-    const open=i=>{const n=node(),list=(n.images||[]).map(norm);cur=(i+list.length)%list.length;const it=list[cur];LOG('Viewing',Q((MEDIA[it.file]||it.file).split('/').pop()));d.className=cls()+' gv';d.innerHTML='';
+    const open=i=>{const n=node(),list=(n.images||[]).map(norm);cur=(i+list.length)%list.length;const it=list[cur],fnm=(MEDIA[it.file]||it.file).split('/').pop();LOG('Viewing',Q(fnm));d.className=cls()+' gv';d.innerHTML='';
       const bar=el('div','gbar'),back=el('button','btn'),pv=el('button','btn'),nx=el('button','btn'),c=el('span','gn'),im=el('img','big'),cap=el('div','gcap');
       back.type=pv.type=nx.type='button';back.textContent='Back';pv.textContent='<';nx.textContent='>';pv.setAttribute('aria-label','Previous');nx.setAttribute('aria-label','Next');
       c.textContent=(cur+1)+' / '+list.length;const closeView=()=>{LOG('Closing',Q((MEDIA[it.file]||it.file).split('/').pop()));show()};back.onclick=closeView;pv.onclick=()=>open(cur-1);nx.onclick=()=>open(cur+1);
       im.src=src(n,it.file);im.alt=it.title||it.file;im.onerror=()=>{cap.textContent='Could not load '+it.file+'. Check the file name and folder.'};
-      cap.textContent=it.title||'';const dim=el('span','gdim');cap.append(dim);im.addEventListener('load',()=>{if(im.naturalWidth)dim.textContent=(it.title?'  \u00b7  ':'')+im.naturalWidth+' \u00d7 '+im.naturalHeight+' px'});bar.append(back,pv,nx,c);
+      cap.textContent=it.title||'';const dim=el('span','gdim');cap.append(dim);let bytes=0;const upd=()=>{const p=[];if(im.naturalWidth)p.push(im.naturalWidth+' \u00d7 '+im.naturalHeight+' px');if(bytes)p.push(fmtBytes(bytes));dim.textContent=p.length?(it.title?'  \u00b7  ':'')+p.join('  \u00b7  '):''};
+      im.addEventListener('load',()=>{upd();LOG('Loaded',Q(fnm)+' '+im.naturalWidth+' \u00d7 '+im.naturalHeight+' px');
+        /* file size: ask the server (works on the live site / a local server; a plain file:// page cannot) */
+        fetch(im.currentSrc||im.src,{method:'HEAD'}).then(r=>{const l=+r.headers.get('content-length');if(l){bytes=l;upd();LOG('Size',Q(fnm)+' '+fmtBytes(l))}}).catch(()=>{})});bar.append(back,pv,nx,c);
       /* direct download + copyable link for this picture (e.g. to load it in other programs) */
       const url=new URL(src(n,it.file),location.href).href,dl=el('div','gdl'),a=el('a','btn'),row=el('div','gcopy'),inp=el('input'),cp=el('button','btn');
-      a.href=url;a.download=url.split('/').pop().split('?')[0];a.textContent='Download';
+      a.href=url;a.download=url.split('/').pop().split('?')[0];a.textContent='Download';a.addEventListener('click',()=>LOG('Downloading',Q(a.download)+' (original size)'));
       inp.readOnly=true;inp.value=url;inp.setAttribute('aria-label','Direct link to this picture');inp.onclick=()=>inp.select();
       /* size chooser (like Unity's Max Size): the resized copies made by the gallery manager, if any */
       const szs=(!MEDIA[it.file]&&it.sizes)||[],pick=el('select');
       if(szs.length){const o=el('option');o.value='';o.textContent='Original';pick.append(o);
         szs.forEach(N=>{const o=el('option'),f=it.file,ext=(f.match(/\.[^.]+$/)||[''])[0].toLowerCase(),nm=/^\.(png|jpe?g|webp)$/.test(ext)?f:f+'.png';o.value=new URL((n.folder||'')+'size-copies/'+N+'/'+nm,location.href).href;o.textContent=N+' px';pick.append(o)});
-        pick.setAttribute('aria-label','Choose the size of the linked picture');pick.onchange=()=>{inp.value=pick.value||url};}
+        pick.setAttribute('aria-label','Choose the size of the linked picture');pick.onchange=()=>{inp.value=pick.value||url;LOG('Link size',Q(fnm)+' set to '+(pick.value?pick.options[pick.selectedIndex].textContent:'Original'))};}
       cp.type='button';cp.textContent='Copy link';
-      cp.onclick=()=>{const ok=()=>{cp.textContent='Copied!';setTimeout(()=>cp.textContent='Copy link',1500)};
+      cp.onclick=()=>{LOG('Copying link',inp.value);const ok=()=>{cp.textContent='Copied!';setTimeout(()=>cp.textContent='Copy link',1500)};
         inp.select();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(inp.value).then(ok,()=>{document.execCommand('copy');ok()});else{document.execCommand('copy');ok()}};
       if(szs.length)row.append(pick);row.append(inp,cp);
-      const top=el('div','gdr'),lab=el('span','glab'),fname=a.download,sb=SIZES.map(N=>{const b=el('button','btn');b.type='button';b.textContent=N;b.title='Download resized: longest side '+N+' px';b.onclick=()=>resizeDl(url,N,fname);return b});
+      const top=el('div','gdr'),lab=el('span','glab'),fname=a.download,sb=SIZES.map(N=>{const b=el('button','btn');b.type='button';b.textContent=N;b.title='Download resized: longest side '+N+' px';b.onclick=()=>{LOG('Downloading',Q(fname)+' resized to '+N+' px');resizeDl(url,N,fname)};return b});
       lab.textContent='Resized:';top.append(a,lab,...sb);
       im.addEventListener('load',()=>{const m=Math.max(im.naturalWidth,im.naturalHeight);sb.forEach((b,j)=>{if(m&&m<=SIZES[j]){b.disabled=true;b.title='This picture is already '+m+' px or smaller'}})});
       dl.append(top,row);d.append(bar,im,cap,dl);d.focus()};
