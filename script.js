@@ -3,7 +3,7 @@
    Put files in the media folder, add a line here, then use the
    nickname as an app's icon or in a gallery / video / shake tab.
    =============================================================== */
-const MEDIA={dorito:"media/SpinningDorito_pixel.gif",browser:"media/Browser_icon.png",nugget:"media/Alone_nugget.png",folder:"media/Dorito_folder_icon.png",nuggetVideo:"media/alone_nugget.mp4",galleryIcon:"media/Gallery_icon.png",doritoStill:"media/Dorito_still.png"};
+const MEDIA={dorito:"media/SpinningDorito_pixel.gif",browser:"media/Browser_icon.png",nugget:"media/Alone_nugget.png",cmd:"media/Dorito_cmd.png",folder:"media/Dorito_folder_icon.png",nuggetVideo:"media/alone_nugget.mp4",galleryIcon:"media/Gallery_icon.png",doritoStill:"media/Dorito_still.png"};
 
 /* ===============================================================
    YOUR APPS. Add one object here to add an icon + popup.
@@ -11,6 +11,7 @@ const MEDIA={dorito:"media/SpinningDorito_pixel.gif",browser:"media/Browser_icon
      w / h: window size in px (h is optional)    open:true = opens on load
      pos:[x,y]  where the icon sits on the desktop, as fractions of the screen
                 (0 = left / top edge, 1 = right / bottom edge). Example [0.45,0.08]
+     wpos:[x,y] OPTIONAL: where the WINDOW opens; x is where its RIGHT edge sits, y its top, as fractions of the screen ([.97,.04] = upper right)
      fw / fh    OPTIONAL: the window opens this big as a fraction of the screen
                 (fw:.73 = 73% of the screen width) and its content scales to fit
      tabs: each tab has a label and a template:
@@ -25,6 +26,8 @@ const APPS=[
   {id:'browser',title:'Dorito OS Browser',icon:'browser',address:'dorito.net://HIIIII.html/',w:620,open:true,pos:[.432,.386],fw:.243,fh:.267,tabs:[
     {label:'Search',template:'search'},
     {label:'Home',html:'<h2>Idk got lazy nothing here yet</h2><p>My website is still under construction :)</p><div class="c"><img src="media/SpinningDorito_pixel.gif" width="120" alt="Spinning dorito"></div>'}]},
+  {id:'console',title:'Console',icon:'cmd',address:'dorito.net://console',w:520,h:390,open:true,wpos:[.97,.04],pos:[.66,.56],tabs:[
+    {label:'Console',template:'console'}]},
   {id:'dorito',title:'Spinning Dorito',icon:'dorito',address:'dorito.net://spinning',w:340,pos:[.32,.541],tabs:[
     {label:'Dorito',html:'<div class="c"><img src="media/SpinningDorito_pixel.gif" width="200" alt="Spinning dorito"></div>'}]},
   {id:'nugget',title:'Alone nugget (he is very lonely)',label:'Alone nugget',icon:'nugget',address:'dorito.net://alone-nugget',w:420,pos:[.641,.235],tabs:[
@@ -88,9 +91,22 @@ const APPS=[
 const el=(t,c)=>{const e=document.createElement(t);if(c)e.className=c;return e},
       desk=document.getElementById('desk'),box=document.getElementById('icons'),wins={};
 let z=10,count=0;
+/* the Console program: one line per thing you do ("Click -> 'Gallery'", "Opening -> 'Gallery'", "Viewing -> 'a.png'") */
+const CLOGS=[],CSINK=[];
+function LOG(kind,what){const line=kind+' -> '+what;CLOGS.push(line);if(CLOGS.length>200)CLOGS.shift();CSINK.forEach(f=>f(line))}
+const Q=t=>"'"+t+"'";
+document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest||t.closest('.cpage,.cclear'))return;
+  const x=t.closest('button,a,input,select,.th,.tab,.icon,.cell'),nm=x&&((x.getAttribute('aria-label')||x.title||x.innerText||(x.querySelector&&x.querySelector('img')&&x.querySelector('img').alt)||x.value||'').trim().replace(/\s+/g,' ').slice(0,40));
+  LOG('Click',nm?Q(nm):'position '+Math.round(e.clientX)+', '+Math.round(e.clientY))},true);
 
 /* tab templates */
 const TEMPLATES={
+  console:(t,x)=>{x.view.classList.add('flush');
+    const d=el('div','cpage'),clr=el('button','btn cclear');clr.type='button';clr.textContent='Clear';
+    const add=l=>{if(!d.isConnected){const i=CSINK.indexOf(add);if(i>=0)CSINK.splice(i,1);return}
+      const stick=d.scrollHeight-d.scrollTop-d.clientHeight<24,r=el('div');r.textContent=l;d.appendChild(r);while(d.children.length>200)d.firstChild.remove();if(stick)d.scrollTop=d.scrollHeight};
+    clr.onclick=()=>{d.replaceChildren();CLOGS.length=0};x.ex.appendChild(clr);
+    CLOGS.forEach(l=>{const r=el('div');r.textContent=l;d.appendChild(r)});CSINK.push(add);setTimeout(()=>{d.scrollTop=d.scrollHeight},0);return d},
   html:t=>{const d=el('div','page');d.innerHTML=t.html||'';return d},
   search:()=>{const d=el('div','search');
     d.innerHTML='<img alt="" src="'+MEDIA.browser+'"><h2>Dorito Search</h2><div class="sbox"><input type="search" aria-label="Search" autocomplete="off"><span class="ph" aria-hidden="true">Search...</span></div><button class="btn" type="button">Search</button>';
@@ -101,8 +117,10 @@ const TEMPLATES={
     const root={name:t.name||'Gallery',folder:t.folder||'',images:t.images||[],folders:t.folders||[],pixelated:t.pixelated},
       norm=i=>typeof i==='string'?{file:i}:i,src=(n,f)=>MEDIA[f]||(n.folder||'')+f,d=el('div');
     let path=[root],cur=-1;
+    /* gallery-size.txt is written by the gallery manager (one line: "Gallery size: 812.4 MB") */
+    if(x.st)x.st.classList.add('gsize');let gsz='';fetch('gallery-size.txt',{cache:'no-cache'}).then(r=>r.ok?r.text():'').then(t=>{t=(t||'').trim();if(/^Gallery size:/.test(t)){gsz=t;if(x.st)x.st.textContent=t}}).catch(()=>{});
     const node=()=>path[path.length-1],cls=()=>'gal'+(path.some(n=>n.pixelated)?' px':'');
-    const up=()=>{if(path.length>1){path.pop();show()}};
+    const up=()=>{if(path.length>1){LOG('Closing folder',Q(node().name));path.pop();show()}};
     const show=()=>{cur=-1;const n=node(),subs=n.folders||[],imgs=(n.images||[]).map(norm);d.className=cls();d.innerHTML='';
       const bar=el('div','gbar'),crumb=el('span','gcrumb');
       if(path.length>1){const b=el('button','btn');b.type='button';b.textContent='Back';b.onclick=up;bar.appendChild(b)}
@@ -110,26 +128,42 @@ const TEMPLATES={
       if(!subs.length&&!imgs.length){const p=el('p','empty');p.textContent='Empty :(';d.appendChild(p);d.focus();return}
       const g=el('div','gg');
       subs.forEach(f=>{const b=el('button','th fd'),im=el('img'),lb=el('span');b.type='button';b.title=f.name;im.src=MEDIA[f.icon||'folder'];im.alt='';lb.textContent=f.name;
-        b.append(im,lb);b.onclick=()=>{path.push(f);show()};g.appendChild(b)});
+        b.append(im,lb);b.onclick=()=>{LOG('Opening folder',Q(f.name));path.push(f);show()};g.appendChild(b)});
       imgs.forEach((it,i)=>{const b=el('button','th'),im=el('img');b.type='button';b.title=it.title||it.file;im.src=src(n,it.file);im.alt=it.title||it.file;im.loading='lazy';
         im.onerror=()=>{b.classList.add('miss');b.textContent=it.file};b.appendChild(im);b.onclick=()=>open(i);g.appendChild(b)});
       d.appendChild(g);d.focus()};
-    const open=i=>{const n=node(),list=(n.images||[]).map(norm);cur=(i+list.length)%list.length;const it=list[cur];d.className=cls()+' gv';d.innerHTML='';
+    /* downscaled download: the browser shrinks the picture so its longest side is N px (never enlarges) */
+    const SIZES=[2048,1024,512,256];
+    const resizeDl=(url,N,name)=>{const i=new Image();i.onload=()=>{const w=i.naturalWidth||N,h=i.naturalHeight||N,k=Math.min(1,N/Math.max(w,h)),cw=Math.max(1,Math.round(w*k)),ch=Math.max(1,Math.round(h*k)),c=document.createElement('canvas');
+      c.width=cw;c.height=ch;const g=c.getContext('2d');g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(i,0,0,cw,ch);
+      const ext=(name.match(/\.([^.]+)$/)||[0,'png'])[1].toLowerCase(),jpg=/^jpe?g$/.test(ext),webp=ext==='webp',type=jpg?'image/jpeg':webp?'image/webp':'image/png',
+        out=name.replace(/\.[^.]+$/,'')+'_'+N+(jpg?'.jpg':webp?'.webp':'.png');
+      c.toBlob(bl=>{if(!bl)return;const u=URL.createObjectURL(bl),a=document.createElement('a');a.href=u;a.download=out;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000)},type,.92)};i.src=url};
+    const open=i=>{const n=node(),list=(n.images||[]).map(norm);cur=(i+list.length)%list.length;const it=list[cur];LOG('Viewing',Q((MEDIA[it.file]||it.file).split('/').pop()));d.className=cls()+' gv';d.innerHTML='';
       const bar=el('div','gbar'),back=el('button','btn'),pv=el('button','btn'),nx=el('button','btn'),c=el('span','gn'),im=el('img','big'),cap=el('div','gcap');
       back.type=pv.type=nx.type='button';back.textContent='Back';pv.textContent='<';nx.textContent='>';pv.setAttribute('aria-label','Previous');nx.setAttribute('aria-label','Next');
-      c.textContent=(cur+1)+' / '+list.length;back.onclick=show;pv.onclick=()=>open(cur-1);nx.onclick=()=>open(cur+1);
+      c.textContent=(cur+1)+' / '+list.length;const closeView=()=>{LOG('Closing',Q((MEDIA[it.file]||it.file).split('/').pop()));show()};back.onclick=closeView;pv.onclick=()=>open(cur-1);nx.onclick=()=>open(cur+1);
       im.src=src(n,it.file);im.alt=it.title||it.file;im.onerror=()=>{cap.textContent='Could not load '+it.file+'. Check the file name and folder.'};
-      cap.textContent=it.title||'';bar.append(back,pv,nx,c);
+      cap.textContent=it.title||'';const dim=el('span','gdim');cap.append(dim);im.addEventListener('load',()=>{if(im.naturalWidth)dim.textContent=(it.title?'  \u00b7  ':'')+im.naturalWidth+' \u00d7 '+im.naturalHeight+' px'});bar.append(back,pv,nx,c);
       /* direct download + copyable link for this picture (e.g. to load it in other programs) */
       const url=new URL(src(n,it.file),location.href).href,dl=el('div','gdl'),a=el('a','btn'),row=el('div','gcopy'),inp=el('input'),cp=el('button','btn');
       a.href=url;a.download=url.split('/').pop().split('?')[0];a.textContent='Download';
       inp.readOnly=true;inp.value=url;inp.setAttribute('aria-label','Direct link to this picture');inp.onclick=()=>inp.select();
+      /* size chooser (like Unity's Max Size): the resized copies made by the gallery manager, if any */
+      const szs=(!MEDIA[it.file]&&it.sizes)||[],pick=el('select');
+      if(szs.length){const o=el('option');o.value='';o.textContent='Original';pick.append(o);
+        szs.forEach(N=>{const o=el('option'),f=it.file,ext=(f.match(/\.[^.]+$/)||[''])[0].toLowerCase(),nm=/^\.(png|jpe?g|webp)$/.test(ext)?f:f+'.png';o.value=new URL((n.folder||'')+'size-copies/'+N+'/'+nm,location.href).href;o.textContent=N+' px';pick.append(o)});
+        pick.setAttribute('aria-label','Choose the size of the linked picture');pick.onchange=()=>{inp.value=pick.value||url};}
       cp.type='button';cp.textContent='Copy link';
       cp.onclick=()=>{const ok=()=>{cp.textContent='Copied!';setTimeout(()=>cp.textContent='Copy link',1500)};
-        inp.select();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(ok,()=>{document.execCommand('copy');ok()});else{document.execCommand('copy');ok()}};
-      row.append(inp,cp);dl.append(a,row);d.append(bar,im,cap,dl);d.focus()};
+        inp.select();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(inp.value).then(ok,()=>{document.execCommand('copy');ok()});else{document.execCommand('copy');ok()}};
+      if(szs.length)row.append(pick);row.append(inp,cp);
+      const top=el('div','gdr'),lab=el('span','glab'),fname=a.download,sb=SIZES.map(N=>{const b=el('button','btn');b.type='button';b.textContent=N;b.title='Download resized: longest side '+N+' px';b.onclick=()=>resizeDl(url,N,fname);return b});
+      lab.textContent='Resized:';top.append(a,lab,...sb);
+      im.addEventListener('load',()=>{const m=Math.max(im.naturalWidth,im.naturalHeight);sb.forEach((b,j)=>{if(m&&m<=SIZES[j]){b.disabled=true;b.title='This picture is already '+m+' px or smaller'}})});
+      dl.append(top,row);d.append(bar,im,cap,dl);d.focus()};
     d.onkeydown=e=>{const k=e.key;
-      if(cur>=0){if(k==='ArrowLeft')open(cur-1);else if(k==='ArrowRight')open(cur+1);else if(k==='Escape'){e.stopPropagation();show()}else return}
+      if(cur>=0){if(k==='ArrowLeft')open(cur-1);else if(k==='ArrowRight')open(cur+1);else if(k==='Escape'){e.stopPropagation();const im0=(node().images||[])[cur],f0=im0&&(typeof im0==='string'?im0:im0.file);if(f0)LOG('Closing',Q((MEDIA[f0]||f0).split('/').pop()));show()}else return}
       else if(k==='Escape'&&path.length>1){e.stopPropagation();up()}else return;
       e.preventDefault()};
     d.tabIndex=0;show();return d},
@@ -200,7 +234,8 @@ APPS.forEach((a,i)=>{
 function front(w){document.querySelectorAll('.win').forEach(x=>x.classList.remove('top'));w.classList.add('top');w.style.zIndex=++z}
 
 function launch(a){
-  if(wins[a.id]){front(wins[a.id]);return}
+  if(wins[a.id]){LOG('Focus',Q(a.title));front(wins[a.id]);return}
+  LOG('Opening',Q(a.title));
   const w=el('div','win');
   w.innerHTML='<div class="tb"><img alt=""><b></b><button class="btn x" type="button" aria-label="Close">X</button></div><div class="addr"><span>Address:</span><input class="url" type="text" spellcheck="false" autocomplete="off" aria-label="Address"></div><div class="tabs" role="tablist"></div><div class="view"><div class="load"><img alt="" src="'+MEDIA.dorito+'"><div>Loading\u2026</div><div class="bar"><u></u></div></div><div class="pg"></div></div><div class="stat"><span class="stt"></span><span>Dorito OS</span><span class="ex"></span><i class="grip" title="Resize"></i></div>';
   const $=s=>w.querySelector(s),pg=$('.pg'),load=$('.load'),st=$('.stt'),tabsEl=$('.tabs');
@@ -214,23 +249,24 @@ function launch(a){
   const off=(count++%5)*28,H=w.offsetHeight;
   w.style.left=Math.max(6,Math.min((innerWidth-W)/2+off-30,innerWidth-W-6))+'px';
   w.style.top=Math.max(6,Math.min((innerHeight-H)/2+off-30,innerHeight-H-6))+'px';
+  if(a.wpos&&innerWidth>=700){const ww=w.offsetWidth,wh=w.offsetHeight;w.style.left=Math.max(6,Math.min(innerWidth-ww-6,a.wpos[0]*innerWidth-ww))+'px';w.style.top=Math.max(6,Math.min(innerHeight-wh-6,a.wpos[1]*innerHeight))+'px'}
   front(w);w.addEventListener('pointerdown',()=>front(w));
-  let timer;const ctx={w,view:$('.view'),ex:$('.ex')};
+  let timer;const ctx={w,view:$('.view'),ex:$('.ex'),st};
   /* scale the window's contents with the window (set once you start resizing) */
   const fit=()=>{const c=pg.firstElementChild;if(!c||c.classList.contains('media')||!w._base)return;
     const v=ctx.view;c.style.zoom=Math.max(.35,Math.min(6,Math.min(v.clientWidth/w._base.w,v.clientHeight/w._base.h)))};
   new ResizeObserver(fit).observe(ctx.view);
   const show=t=>{clearTimeout(timer);ctx.view.classList.remove('flush','galv');ctx.view.style.minHeight='';ctx.ex.replaceChildren();load.classList.remove('on');void load.offsetWidth;load.classList.add('on');pg.innerHTML='';$('.view').scrollTop=0;st.textContent='Loading '+t.label+'\u2026';
-    timer=setTimeout(()=>{load.classList.remove('on');st.textContent='';pg.appendChild((TEMPLATES[t.template||'html']||TEMPLATES.html)(t,ctx));fit()},820)};
+    timer=setTimeout(()=>{load.classList.remove('on');st.textContent='';st.classList.remove('gsize');pg.appendChild((TEMPLATES[t.template||'html']||TEMPLATES.html)(t,ctx));fit()},820)};
   if(a.tabs.length>1)a.tabs.forEach((t,i)=>{const b=el('button','tab');b.type='button';b.role='tab';b.textContent=t.label;b.setAttribute('aria-selected',i===0);
-    b.onclick=()=>{[...tabsEl.children].forEach(c=>c.setAttribute('aria-selected',c===b));show(t)};tabsEl.appendChild(b)});
+    b.onclick=()=>{[...tabsEl.children].forEach(c=>c.setAttribute('aria-selected',c===b));LOG('Tab',Q(t.label));show(t)};tabsEl.appendChild(b)});
   if(a.fw&&innerWidth>=700){ /* open big: measure the normal size first so the content can scale up from it */
     pg.appendChild((TEMPLATES[a.tabs[0].template||'html']||TEMPLATES.html)(a.tabs[0],ctx));
     w._base={w:ctx.view.clientWidth,h:ctx.view.clientHeight};pg.innerHTML='';
     const BW=Math.min(innerWidth-12,Math.round(a.fw*innerWidth)),BH=Math.min(innerHeight-12,Math.round((a.fh||a.fw)*innerHeight));
     w.style.width=BW+'px';w.style.height=BH+'px';w.style.left=Math.round((innerWidth-BW)/2)+'px';w.style.top=Math.round((innerHeight-BH)/2)+'px';w._user=1;w.classList.add('sized')}
   show(a.tabs[0]);
-  $('.x').onclick=()=>{clearTimeout(timer);w.remove();delete wins[a.id]};
+  $('.x').onclick=()=>{LOG('Closing',Q(a.title));clearTimeout(timer);w.remove();delete wins[a.id]};
   ['nw','ne','sw'].forEach(d=>{const h=el('i','rz '+d);h.dataset.dir=d;w.appendChild(h)});
   $('.grip').dataset.dir='se';
   w.querySelectorAll('.rz,.grip').forEach(h=>h.addEventListener('pointerdown',e=>{

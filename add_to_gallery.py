@@ -50,8 +50,12 @@ def load():
         sys.exit('The AUTO-GALLERY markers are missing from script.js. Use the script.js that came with this tool.')
     i, j = src.index(START) + len(START), src.index(END)
     data = json.loads(src[i:j])
-    for f in data:  # make every picture a {file,title} entry
+    def norm(f):  # make every picture a {file,title} entry (also inside sub-folders)
         f['images'] = [{'file': x, 'title': nice_title(x)} if isinstance(x, str) else x for x in f['images']]
+        for c in f.get('folders', []):
+            norm(c)
+    for f in data:
+        norm(f)
     return data
 
 
