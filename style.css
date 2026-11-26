@@ -110,3 +110,12 @@ img{image-rendering:pixelated}
 .th.fd img{width:64px;height:64px;object-fit:contain;image-rendering:pixelated;flex:none}
 .th.fd:hover,.th.fd:focus-visible{background:#4200ac86;border-color:#ffffff4d;outline:0}
 .media canvas{display:block;width:100%;height:100%}
+
+/* gallery: download button + copyable direct link under the big picture */
+.gdl{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0 2px;user-select:text}
+.gdl .btn,.gcopy .btn{color:blueviolet;background:#0003cf40;border:2px solid;border-color:#0157c9 #0017e785 #0017e785;cursor:pointer;font-size:18px;padding:0 12px;text-decoration:none;display:inline-block;line-height:1.2}
+.gdl .btn:hover,.gdl .btn:focus-visible{background:#4200ac99;color:#d9c2ff;border-color:#3d8bff #0157c9 #0157c9;outline:0}
+.gdl .btn:active{background:#26008fe0}
+.gcopy{display:flex;gap:6px;width:min(100%,520px)}
+.gcopy input{flex:1;min-width:0;font:inherit;font-size:15px;color:var(--yellow);background:#07051acc;border:2px solid;border-color:#0017e785 #0157c9 #0157c9;padding:1px 6px;outline:0;text-overflow:ellipsis}
+.gcopy input:focus{border-color:#3d8bff}

@@ -81,7 +81,7 @@ const APPS=[
 
       /* Folders below are managed by add_to_gallery.py. Do not edit between the AUTO-GALLERY markers
          by hand (you can, but the script rewrites that part). */
-    ].concat(/*AUTO-GALLERY-START*/[{"name": "Pictures", "folder": "media/gallery/pictures/", "images": [{"file": "SO-SAD.gif", "title": "SO SAD"}], "pixelated": true}]/*AUTO-GALLERY-END*/)}
+    ].concat(/*AUTO-GALLERY-START*/[{"name": "Pictures", "folder": "media/gallery/pictures/", "images": []}]/*AUTO-GALLERY-END*/)}
   ]}
 ];
 
@@ -119,7 +119,15 @@ const TEMPLATES={
       back.type=pv.type=nx.type='button';back.textContent='Back';pv.textContent='<';nx.textContent='>';pv.setAttribute('aria-label','Previous');nx.setAttribute('aria-label','Next');
       c.textContent=(cur+1)+' / '+list.length;back.onclick=show;pv.onclick=()=>open(cur-1);nx.onclick=()=>open(cur+1);
       im.src=src(n,it.file);im.alt=it.title||it.file;im.onerror=()=>{cap.textContent='Could not load '+it.file+'. Check the file name and folder.'};
-      cap.textContent=it.title||'';bar.append(back,pv,nx,c);d.append(bar,im,cap);d.focus()};
+      cap.textContent=it.title||'';bar.append(back,pv,nx,c);
+      /* direct download + copyable link for this picture (e.g. to load it in other programs) */
+      const url=new URL(src(n,it.file),location.href).href,dl=el('div','gdl'),a=el('a','btn'),row=el('div','gcopy'),inp=el('input'),cp=el('button','btn');
+      a.href=url;a.download=url.split('/').pop().split('?')[0];a.textContent='Download';
+      inp.readOnly=true;inp.value=url;inp.setAttribute('aria-label','Direct link to this picture');inp.onclick=()=>inp.select();
+      cp.type='button';cp.textContent='Copy link';
+      cp.onclick=()=>{const ok=()=>{cp.textContent='Copied!';setTimeout(()=>cp.textContent='Copy link',1500)};
+        inp.select();if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(ok,()=>{document.execCommand('copy');ok()});else{document.execCommand('copy');ok()}};
+      row.append(inp,cp);dl.append(a,row);d.append(bar,im,cap,dl);d.focus()};
     d.onkeydown=e=>{const k=e.key;
       if(cur>=0){if(k==='ArrowLeft')open(cur-1);else if(k==='ArrowRight')open(cur+1);else if(k==='Escape'){e.stopPropagation();show()}else return}
       else if(k==='Escape'&&path.length>1){e.stopPropagation();up()}else return;
