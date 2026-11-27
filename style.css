@@ -136,3 +136,4 @@ img{image-rendering:pixelated}
 .cpage{height:100%;min-height:150px;overflow:auto;padding:6px 10px;color:#7df9ff;font-size:19px;line-height:1.2;user-select:text;background:#07051acc}
 .cpage div{white-space:pre-wrap;word-break:break-word}
 .cclear{margin-right:6px;white-space:nowrap}
+.glinks{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px}.glinks select{font:inherit;font-size:16px;color:#ffa600;background:#07051acc;border:2px solid #0157c9;padding:0 4px}.glinks .glab{color:#7df9ff}

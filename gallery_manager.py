@@ -345,6 +345,47 @@ def a_delete_folder(data, a):
     return {}
 
 
+LINKS_DIR = os.path.join(HERE, 'gallery-links')
+
+
+def a_links(data, a):
+    """Write one text file per gallery folder: one direct link per line (for the VRChat image-loading script)."""
+    from urllib.parse import quote
+    base = (a.get('base') or '').strip()
+    if not base.lower().startswith(('http://', 'https://')):
+        raise Err('Type the web address of your site first, for example https://www.dorito.net/')
+    if not base.endswith('/'):
+        base += '/'
+    size = int(a.get('size') or 0)
+    fold = find(data, a['folder']) if a.get('folder') else None
+    nodes = list(walk([fold])) if fold else list(walk(data))
+    os.makedirs(LINKS_DIR, exist_ok=True)
+    written, fallback = [], 0
+    for node in nodes:
+        if not node.get('folder') or not node['images']:
+            continue
+        urls = []
+        for it in node['images']:
+            fn = it['file']
+            if size and size in (it.get('sizes') or []) and os.path.exists(size_path(node, size, fn)):
+                rel = node['folder'] + SIZES_DIR + '/' + str(size) + '/' + size_name(fn)
+            else:
+                rel = node['folder'] + fn
+                if size:
+                    fallback += 1
+            urls.append(base + '/'.join(quote(x) for x in rel.split('/')))
+        name = node['folder'].strip('/')
+        if name.startswith('media/gallery/'):
+            name = name[len('media/gallery/'):]
+        name = ''.join(c if (c.isalnum() or c in '-_ ') else '_' for c in name.replace('/', '_')) or 'gallery'
+        with open(os.path.join(LINKS_DIR, name + '.txt'), 'w', encoding='utf-8', newline='\n') as f:
+            f.write('\n'.join(urls) + '\n')
+        written.append({'file': name + '.txt', 'count': len(urls), 'name': node['name']})
+    if not written:
+        raise Err('There are no pictures to export here.')
+    return {'written': written, 'fallback': fallback, 'dir': LINKS_DIR}
+
+
 def a_pixel(data, a):
     fold = find(data, a['folder'])
     if a['value']:
@@ -520,7 +561,7 @@ def a_sync(data, a):
 
 
 ACTIONS = {'folder/new': a_new_folder, 'folder/rename': a_rename_folder, 'folder/delete': a_delete_folder,
-           'folder/pixel': a_pixel, 'pic/retitle': a_retitle, 'pic/move': a_move, 'pic/delete': a_delete_pics, 'pic/removesizes': a_remove_sizes, 'pic/meta': a_meta,
+           'folder/pixel': a_pixel, 'links': a_links, 'pic/retitle': a_retitle, 'pic/move': a_move, 'pic/delete': a_delete_pics, 'pic/removesizes': a_remove_sizes, 'pic/meta': a_meta,
            'pic/reorder': a_reorder, 'pic/renamefiles': a_renamefiles, 'pic/sort': a_sort, 'sync': a_sync}
 
 
@@ -988,6 +1029,19 @@ async function fitJobs(list,o){
   const msg=(stopped?'Stopped. ':'Done. ')+changed+' picture(s) made smaller, saved '+fmtB(saved)+(same?', '+same+' left as they were':'')+(bad?', '+bad+' failed':'')+'.';
   clog(msg,'ok');toast(msg);return{changed,saved}}
 const fitable=(l,o)=>l.filter(x=>FITRE.test(x.it.file)&&(o.ratio?!x.px:true));
+async function linksDlg(){
+  let base='https://www.dorito.net/';try{base=localStorage.getItem('dorito-base')||base}catch(e){}
+  const inp=h('input',{type:'text',value:base,style:'width:100%;font:inherit;font-size:20px;color:#ffa600;background:#07051acc;border:2px solid #0157c9;padding:2px 6px',spellcheck:false});
+  const pick=h('select',{style:'font:inherit;font-size:20px;color:#ffa600;background:#07051acc;border:2px solid #0157c9;padding:2px 6px'},h('option',{value:0},'Original files'),...ALLSIZES.map(N=>h('option',{value:N},N+' px copies (where they exist)')));
+  const r=await dialog('Export links for VRChat',[h('p',{},'Writes one text file per folder (one direct link per line, in the same order as the gallery) for '+(cur?'this folder and its sub-folders':'every folder')+'. Pictures must already be pushed to your site for the links to work.'),
+    h('label',{class:'lbl'},'Your site address: ',inp),h('label',{class:'lbl'},'Link to: ',pick)],[{label:'Cancel',value:null},{label:'Export',value:'go',go:1}]);
+  if(!r)return;try{localStorage.setItem('dorito-base',inp.value)}catch(e){}
+  try{const j=await api('links',{base:inp.value,size:+pick.value,folder:cur||''});
+    const w=j.written||[];clog('Exported links to '+j.dir,'ok');w.forEach(x=>clog('  '+x.file+' ('+x.count+' links)'));
+    await dialog('Links exported',[h('p',{},w.length+' text file(s) saved in this folder on your computer:'),h('p',{style:'color:#7df9ff;word-break:break-all'},j.dir),
+      ...w.map(x=>h('p',{},x.file+'  -  '+x.count+' links')),...(j.fallback?[h('p',{style:'color:#ffa600'},j.fallback+' picture(s) had no copy at that size, so their original file is linked instead.')]:[]),
+      h('p',{},'Drag these files into your Unity Project window, then into the Url List Files slots of your script.')],[{label:'OK',value:1,go:1}])
+  }catch(e){toast(e.message,1)}}
 let convN=2048;
 async function convertDlg(){
   const t=targets(),sc0=t.length?t:under(cur);if(!sc0.length){toast('No pictures here');return}
@@ -1084,7 +1138,7 @@ function render(){
   const bar=$('bar'),area=$('area');bar.innerHTML='';area.innerHTML='';area.className='area';
   const B=(t,fn,o={})=>h('button',{class:'b'+(o.danger?' danger':'')+(o.go?' go':''),type:'button',onclick:fn,disabled:o.off},t);
   if(!cur){
-    bar.append(h('span',{class:'crumb'},'Gallery'),B('New folder',newFolder),B('Import folder',()=>$('dir').click()),h('label',{class:'lbl',title:'On: sub-folders of the folder you import are recreated. Off: every picture goes into one folder.'},h('input',{type:'checkbox',checked:keepSub,onchange:e=>{keepSub=e.target.checked;try{localStorage.setItem('dorito-keepsub',keepSub?'1':'0')}catch(x){}}}),'keep sub-folders'),convLabel(),B('Replace originals...',convertDlg,{go:1}),B('Sync with disk',()=>act('sync',{})));
+    bar.append(h('span',{class:'crumb'},'Gallery'),B('New folder',newFolder),B('Import folder',()=>$('dir').click()),h('label',{class:'lbl',title:'On: sub-folders of the folder you import are recreated. Off: every picture goes into one folder.'},h('input',{type:'checkbox',checked:keepSub,onchange:e=>{keepSub=e.target.checked;try{localStorage.setItem('dorito-keepsub',keepSub?'1':'0')}catch(x){}}}),'keep sub-folders'),convLabel(),B('Replace originals...',convertDlg,{go:1}),B('Export links',linksDlg),B('Sync with disk',()=>act('sync',{})));
     $('st').textContent=data.length+' folder(s). Click a folder to open it.';
     if(!data.length)area.append(h('p',{class:'mempty'},'No folders yet. Press "New folder".'));
     const g=h('div',{class:'grid'});
@@ -1096,7 +1150,7 @@ function render(){
   bar.append(B('Back',()=>{cur=parentOf(cur)||null;clrSel();render()}),h('span',{class:'crumb'},'Gallery / '+trailOf(cur)),B('New folder',newFolder),
     B('Add pictures',()=>$('file').click()),B('Import folder',()=>$('dir').click()),h('label',{class:'lbl',title:'On: sub-folders of the folder you import are recreated. Off: every picture goes into one folder.'},h('input',{type:'checkbox',checked:keepSub,onchange:e=>{keepSub=e.target.checked;try{localStorage.setItem('dorito-keepsub',keepSub?'1':'0')}catch(x){}}}),'keep sub-folders'),
     h('label',{class:'lbl',title:'Names new pictures image_00, image_01, ...'},h('input',{type:'checkbox',checked:auto,onchange:e=>{auto=e.target.checked}}),'auto-name image_00...'),
-    B('Sizes'+(n?' ('+n+')':''),sizesDialog,{off:!total(f),go:1}),B('Replace originals...'+(n?' ('+n+')':''),convertDlg,{off:!total(f),go:1}),convLabel(),
+    B('Sizes'+(n?' ('+n+')':''),sizesDialog,{off:!total(f),go:1}),B('Replace originals...'+(n?' ('+n+')':''),convertDlg,{off:!total(f),go:1}),B('Export links',linksDlg,{off:!total(f)}),convLabel(),
     h('label',{class:'lbl',title:'Make the resized copies (see Sizes) automatically for every picture you add or import'},h('input',{type:'checkbox',checked:autoSizes,onchange:e=>{autoSizes=e.target.checked;try{localStorage.setItem('dorito-autosizes',autoSizes?'1':'0')}catch(x){}}}),'auto-make sizes'),
     h('span',{class:'sep'}),
     B('Rename'+(n?' ('+n+')':''),renamePics,{off:none||deep}),B('Move',movePics,{off:none||deep}),B('Delete',deletePics,{off:none,danger:1}),
