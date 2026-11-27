@@ -12,6 +12,8 @@ const MEDIA={dorito:"media/SpinningDorito_pixel.gif",browser:"media/Browser_icon
      pos:[x,y]  where the icon sits on the desktop, as fractions of the screen
                 (0 = left / top edge, 1 = right / bottom edge). Example [0.45,0.08]
      wpos:[x,y] OPTIONAL: where the WINDOW opens; x is where its RIGHT edge sits, y its top, as fractions of the screen ([.97,.04] = upper right)
+     template:'site', url:'https://...'  a tab that shows that web page inside the window (the site must allow being shown in a frame)
+     multi:true OPTIONAL: lets the window open extra tabs with a + button (each tab is its own Dorito Search)
      fw / fh    OPTIONAL: the window opens this big as a fraction of the screen
                 (fw:.73 = 73% of the screen width) and its content scales to fit
      tabs: each tab has a label and a template:
@@ -23,9 +25,9 @@ const MEDIA={dorito:"media/SpinningDorito_pixel.gif",browser:"media/Browser_icon
    One tab = no tab strip is shown.
    =============================================================== */
 const APPS=[
-  {id:'browser',title:'Dorito OS Browser',icon:'browser',address:'dorito.net://HIIIII.html/',w:620,open:true,pos:[.432,.386],fw:.243,fh:.267,tabs:[
-    {label:'Search',template:'search'},
-    {label:'Home',html:'<h2>Idk got lazy nothing here yet</h2><p>My website is still under construction :)</p><div class="c"><img src="media/SpinningDorito_pixel.gif" width="120" alt="Spinning dorito"></div>'}]},
+  {id:'browser',title:'Dorito OS Browser',icon:'browser',address:'dorito.net://HIIIII.html/',w:620,open:true,multi:true,wpos:[.81,.1],pos:[.432,.386],fw:.62,fh:.745,tabs:[
+    {label:'Search',template:'search'}
+    ,{label:'TheZiver.com',template:'site',url:'https://theziver.com'}]},
   {id:'console',title:'Console',icon:'cmd',address:'dorito.net://console',w:520,h:390,open:true,wpos:[.97,.04],pos:[.66,.56],tabs:[
     {label:'Console',template:'console'}]},
   {id:'dorito',title:'Spinning Dorito',icon:'dorito',address:'dorito.net://spinning',w:340,pos:[.32,.541],tabs:[
@@ -101,7 +103,27 @@ document.addEventListener('click',e=>{const t=e.target;if(!t||!t.closest||t.clos
   LOG('Click',nm?Q(nm):'position '+Math.round(e.clientX)+', '+Math.round(e.clientY))},true);
 
 /* tab templates */
+/* Google results shown INSIDE the window (an iframe). The window grows while results are open and goes back to its size afterwards. */
+const isSiteText=v=>/^https?:\/\/\S+$/i.test(v)||/^[^\s\/]+\.[a-z]{2,}(\/\S*)?$/i.test(v);
+const siteUrl=v=>/^https?:/i.test(v)?v:'https://'+v;
+const tabName=v=>{if(!isSiteText(v))return v;try{return new URL(siteUrl(v)).hostname.replace(/^www\./,'')}catch(e){return v}};
+function resultsView(x,q,back){
+  const w=x.w,d=el('div','sres media'),bar=el('div','sbar'),bk=el('button','btn'),qi=el('input'),nt=el('a','btn'),fr=el('iframe');
+  bk.type='button';bk.textContent='Back';qi.type='search';qi.value=q;qi.setAttribute('aria-label','Search');
+  nt.textContent='Open in new tab';nt.target='_blank';nt.rel='noopener';nt.title='If the results below stay blank, open them on google.com instead';
+  const go=v=>{if(isSiteText(v)){const l=siteUrl(v);nt.href=l;fr.src=l;LOG('Visiting',Q(l));if(x.title)x.title(v);return}
+    const l='https://www.google.com/search?q='+encodeURIComponent(v);nt.href=l;fr.src=l+'&igu=1&hl=en';LOG('Search',Q(v));if(x.title)x.title(v)};
+  fr.title='Search results';fr.referrerPolicy='no-referrer';fr.setAttribute('sandbox','allow-scripts allow-forms allow-same-origin allow-popups allow-popups-to-escape-sandbox');
+  bar.append(...(back?[bk]:[]),qi,nt);d.append(bar,fr);
+  if(innerWidth>=700&&!w._restore){const p={l:w.style.left,t:w.style.top,w:w.style.width,h:w.style.height},W=Math.max(w.offsetWidth,Math.min(innerWidth-24,1000)),H=Math.max(w.offsetHeight,Math.min(innerHeight-24,700));
+    w.style.width=W+'px';w.style.height=H+'px';if(W>w.offsetWidth||H>w.offsetHeight){w.style.left=Math.max(6,(innerWidth-W)/2)+'px';w.style.top=Math.max(6,(innerHeight-H)/2)+'px'}
+    w._restore=()=>{w.style.width=p.w;w.style.height=p.h;w.style.left=p.l;w.style.top=p.t;w._restore=null}}
+  x.view.classList.add('sv');front(w);
+  bk.onclick=()=>{LOG('Closing',"'search results'");x.view.classList.remove('sv');if(w._restore)w._restore();if(back)back()};
+  qi.onkeydown=e=>{if(e.key==='Enter'&&qi.value.trim())go(qi.value.trim())};
+  go(q);return d}
 const TEMPLATES={
+  site:(t,x)=>resultsView(x,t.url,null),
   console:(t,x)=>{x.view.classList.add('flush');
     const d=el('div','cpage'),clr=el('button','btn cclear');clr.type='button';clr.textContent='Clear';
     const add=l=>{if(!d.isConnected){const i=CSINK.indexOf(add);if(i>=0)CSINK.splice(i,1);return}
@@ -109,10 +131,12 @@ const TEMPLATES={
     clr.onclick=()=>{d.replaceChildren();CLOGS.length=0};x.ex.appendChild(clr);
     CLOGS.forEach(l=>{const r=el('div');r.textContent=l;d.appendChild(r)});CSINK.push(add);setTimeout(()=>{d.scrollTop=d.scrollHeight},0);return d},
   html:t=>{const d=el('div','page');d.innerHTML=t.html||'';return d},
-  search:()=>{const d=el('div','search');
-    d.innerHTML='<img alt="" src="'+MEDIA.browser+'"><h2>Dorito Search</h2><div class="sbox"><input type="search" aria-label="Search" autocomplete="off"><span class="ph" aria-hidden="true">Search...</span></div><button class="btn" type="button">Search</button>';
-    const i=d.querySelector('input'),go=()=>{const q=i.value.trim();if(q)window.open('https://www.google.com/search?q='+encodeURIComponent(q),'_blank','noopener')};
-    const ph=d.querySelector('.ph');i.oninput=()=>{ph.hidden=!!i.value};d.querySelector('button').onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};setTimeout(()=>i.focus(),30);return d},
+  search:(t,x)=>{
+    const home=()=>{const d=el('div','search');
+      d.innerHTML='<img alt="" src="'+MEDIA.browser+'"><h2>Dorito Search</h2><div class="sbox"><input type="search" aria-label="Search" autocomplete="off"><span class="ph" aria-hidden="true">Search...</span></div><button class="btn" type="button">Search</button>';
+      const i=d.querySelector('input'),go=()=>{const q=i.value.trim();if(!q)return;if(x.title)x.title(q);const res=resultsView(x,q,()=>{res.replaceWith(home());if(x.refit)x.refit()});d.replaceWith(res)};
+      const ph=d.querySelector('.ph');i.oninput=()=>{ph.hidden=!!i.value};d.querySelector('button').onclick=go;i.onkeydown=e=>{if(e.key==='Enter')go()};setTimeout(()=>i.focus(),30);return d};
+    return home()},
   gallery:(t,x)=>{
     x.view.classList.add('flush','galv');
     const root={name:t.name||'Gallery',folder:t.folder||'',images:t.images||[],folders:t.folders||[],pixelated:t.pixelated},
@@ -257,11 +281,14 @@ function launch(a){
   LOG('Opening',Q(a.title));
   const w=el('div','win');
   w.innerHTML='<div class="tb"><img alt=""><b></b><button class="btn x" type="button" aria-label="Close">X</button></div><div class="addr"><span>Address:</span><input class="url" type="text" spellcheck="false" autocomplete="off" aria-label="Address"></div><div class="tabs" role="tablist"></div><div class="view"><div class="load"><img alt="" src="'+MEDIA.dorito+'"><div>Loading\u2026</div><div class="bar"><u></u></div></div><div class="pg"></div></div><div class="stat"><span class="stt"></span><span>Dorito OS</span><span class="ex"></span><i class="grip" title="Resize"></i></div>';
-  const $=s=>w.querySelector(s),pg=$('.pg'),load=$('.load'),st=$('.stt'),tabsEl=$('.tabs');
+  let curTab;const $=s=>w.querySelector(s),pg=$('.pg'),load=$('.load'),st=$('.stt'),tabsEl=$('.tabs');
   $('.tb img').src=MEDIA[a.icon];$('.tb b').textContent=a.title;const url=$('.url'),home=a.address||'dorito.net://';url.value=home;
   url.onkeydown=e=>{if(e.key!=='Enter')return;const q=url.value.trim();if(!q||q===home)return;
     const isSite=/^https?:\/\/\S+$/i.test(q)||/^[^\s\/]+\.[a-z]{2,}(\/\S*)?$/i.test(q);
-    window.open(isSite?(/^https?:/i.test(q)?q:'https://'+q):'https://www.google.com/search?q='+encodeURIComponent(q),'_blank','noopener');url.value=home;url.blur()};
+    if(w._newTab){w._newTab(q)}
+    else if(isSite){window.open(siteUrl(q),'_blank','noopener')}
+    else{clearTimeout(timer);load.classList.remove('on');st.textContent='';pg.innerHTML='';if(w._restore)w._restore();const res=resultsView(ctx,q,()=>show(curTab));pg.appendChild(res)}
+    url.value=home;url.blur()};
   url.addEventListener('focus',()=>url.select());
   const W=Math.min(a.w||420,innerWidth-12);w.style.width=W+'px';if(a.h)w.style.height=Math.min(a.h,innerHeight-12)+'px';
   desk.appendChild(w);wins[a.id]=w;
@@ -272,18 +299,30 @@ function launch(a){
   front(w);w.addEventListener('pointerdown',()=>front(w));
   let timer;const ctx={w,view:$('.view'),ex:$('.ex'),st};
   /* scale the window's contents with the window (set once you start resizing) */
-  const fit=()=>{const c=pg.firstElementChild;if(!c||c.classList.contains('media')||!w._base)return;
+  const fit=()=>{const c=(pgx.hidden?pg:(w._pane||pg)).firstElementChild;if(!c||c.classList.contains('media')||!w._base)return;
     const v=ctx.view;c.style.zoom=Math.max(.35,Math.min(6,Math.min(v.clientWidth/w._base.w,v.clientHeight/w._base.h)))};
-  new ResizeObserver(fit).observe(ctx.view);
-  const show=t=>{clearTimeout(timer);ctx.view.classList.remove('flush','galv');ctx.view.style.minHeight='';ctx.ex.replaceChildren();load.classList.remove('on');void load.offsetWidth;load.classList.add('on');pg.innerHTML='';$('.view').scrollTop=0;st.textContent='Loading '+t.label+'\u2026';
+  ctx.refit=fit;new ResizeObserver(fit).observe(ctx.view);
+  const pgx=el('div','pgx');pgx.hidden=true;$('.view').appendChild(pgx);const dyn=[];
+  const pick=b=>[...tabsEl.querySelectorAll('.tab')].forEach(c=>c.setAttribute('aria-selected',c===b));
+  const show=t=>{curTab=t;pg.hidden=false;pgx.hidden=true;if(w._restore)w._restore();clearTimeout(timer);ctx.view.classList.remove('flush','galv','sv');ctx.view.style.minHeight='';ctx.ex.replaceChildren();load.classList.remove('on');void load.offsetWidth;load.classList.add('on');pg.innerHTML='';$('.view').scrollTop=0;st.textContent='Loading '+t.label+'\u2026';
     timer=setTimeout(()=>{load.classList.remove('on');st.textContent='';st.classList.remove('gsize');pg.appendChild((TEMPLATES[t.template||'html']||TEMPLATES.html)(t,ctx));fit()},820)};
   if(a.tabs.length>1)a.tabs.forEach((t,i)=>{const b=el('button','tab');b.type='button';b.role='tab';b.textContent=t.label;b.setAttribute('aria-selected',i===0);
-    b.onclick=()=>{[...tabsEl.children].forEach(c=>c.setAttribute('aria-selected',c===b));LOG('Tab',Q(t.label));show(t)};tabsEl.appendChild(b)});
+    b.onclick=()=>{pick(b);LOG('Tab',Q(t.label));show(t)};tabsEl.appendChild(b)});
+  if(a.multi&&a.tabs.length>1){tabsEl.classList.add('multi'); /* extra tabs: a + button; every new tab is its own Dorito Search and keeps its results while you switch */
+    const plus=el('button','tab plus');plus.type='button';plus.textContent='+ New tab';plus.title='Open a new tab';plus.setAttribute('aria-label','New tab');let active=null;
+    const select=tb=>{active=tb;pick(tb.btn);clearTimeout(timer);load.classList.remove('on');st.textContent='';ctx.ex.replaceChildren();pg.hidden=true;pgx.hidden=false;dyn.forEach(d=>d.pane.hidden=d!==tb);w._pane=tb.pane;ctx.view.classList.toggle('sv',!!tb.pane.querySelector('.sres'));fit()};
+    const close=tb=>{LOG('Closing tab',Q(tb.lab.textContent));const i=dyn.indexOf(tb);dyn.splice(i,1);tb.btn.remove();tb.pane.remove();if(active===tb){active=null;if(dyn.length)select(dyn[dyn.length-1]);else tabsEl.querySelector('.tab').click()}};
+    const newTab=q=>{const tb={btn:el('button','tab'),pane:el('div','pane'),lab:el('span'),x:el('span','tx')};tb.btn.type='button';tb.btn.role='tab';tb.lab.textContent=q?tabName(q).slice(0,10):'New';tb.x.textContent='\u00d7';tb.x.title='Close tab';tb.btn.append(tb.lab,tb.x);
+      const c2=Object.assign({},ctx,{title:v=>{tb.lab.textContent=tabName(v).slice(0,10)}}),home=()=>TEMPLATES.search({},c2);
+      tb.pane.appendChild(q?resultsView(c2,q,()=>{tb.pane.replaceChildren(home());fit()}):home());
+      tb.btn.onclick=e=>{if(e.target===tb.x)close(tb);else{LOG('Tab',Q(tb.lab.textContent));select(tb)}};
+      dyn.push(tb);tabsEl.insertBefore(tb.btn,plus);pgx.appendChild(tb.pane);select(tb);LOG('New tab',Q(q||'empty'))};
+    plus.onclick=()=>newTab('');tabsEl.appendChild(plus);w._newTab=newTab}
   if(a.fw&&innerWidth>=700){ /* open big: measure the normal size first so the content can scale up from it */
     pg.appendChild((TEMPLATES[a.tabs[0].template||'html']||TEMPLATES.html)(a.tabs[0],ctx));
     w._base={w:ctx.view.clientWidth,h:ctx.view.clientHeight};pg.innerHTML='';
     const BW=Math.min(innerWidth-12,Math.round(a.fw*innerWidth)),BH=Math.min(innerHeight-12,Math.round((a.fh||a.fw)*innerHeight));
-    w.style.width=BW+'px';w.style.height=BH+'px';w.style.left=Math.round((innerWidth-BW)/2)+'px';w.style.top=Math.round((innerHeight-BH)/2)+'px';w._user=1;w.classList.add('sized')}
+    w.style.width=BW+'px';w.style.height=BH+'px';w.style.left=(a.wpos?Math.max(6,Math.min(innerWidth-BW-6,Math.round(a.wpos[0]*innerWidth-BW))):Math.round((innerWidth-BW)/2))+'px';w.style.top=(a.wpos?Math.max(6,Math.min(innerHeight-BH-6,Math.round(a.wpos[1]*innerHeight))):Math.round((innerHeight-BH)/2))+'px';w._user=1;w.classList.add('sized')}
   show(a.tabs[0]);
   $('.x').onclick=()=>{LOG('Closing',Q(a.title));clearTimeout(timer);w.remove();delete wins[a.id]};
   ['nw','ne','sw'].forEach(d=>{const h=el('i','rz '+d);h.dataset.dir=d;w.appendChild(h)});

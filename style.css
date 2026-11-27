@@ -137,3 +137,32 @@ img{image-rendering:pixelated}
 .cpage div{white-space:pre-wrap;word-break:break-word}
 .cclear{margin-right:6px;white-space:nowrap}
 .glinks{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px}.glinks select{font:inherit;font-size:16px;color:#ffa600;background:#07051acc;border:2px solid #0157c9;padding:0 4px}.glinks .glab{color:#7df9ff}
+
+.sres{display:flex;flex-direction:column;height:100%;min-height:340px;gap:4px}
+.sbar{display:flex;gap:6px;align-items:center}
+.sbar input{flex:1;min-width:0;font:inherit;font-size:18px;color:#ffa600;background:#0000008c;border:2px solid;border-color:#0157c9 #0017e785 #0017e785;padding:2px 8px;outline:0}
+.sbar .btn{font-size:16px;padding:1px 10px;color:blueviolet;background:#0003cf40;border:2px solid;border-color:#0157c9 #0017e785 #0017e785;text-decoration:none;white-space:nowrap}
+.sres iframe{flex:1;min-height:0;width:100%;border:2px solid #0157c9;background:#fff}
+.snote{font-size:14px;color:#7df9ff}
+.sbar a.btn{color:#7df9ff}
+.tab .tx{margin-left:8px;color:#7df9ff;opacity:.7}.tab .tx:hover{opacity:1}.tab.plus{padding:0 10px;color:#7df9ff}
+.pg[hidden],.pgx[hidden],.pgx .pane[hidden]{display:none!important}.pgx .pane{height:100%}
+.tab.plus{position:sticky;right:0;color:#7df9ff;padding:0 12px;font-size:inherit;line-height:inherit;flex:none;border-style:solid;box-shadow:-6px 0 6px #0b0630}.tab.plus:hover{background:#4200ac99;color:#fff}
+.tabs.multi .tab{font-size:18px;padding:0 9px}.tabs.multi .tab .tx{margin-left:6px}.tabs.multi .tab.plus{padding:0 10px}
+
+.pgx{height:100%}.pgx .pane{height:100%;display:flex;flex-direction:column}.pgx .pane>.sres{flex:1;height:auto}
+.sres{background:transparent}
+.tabs.multi{padding:5px 6px 2px;min-height:34px;overflow-y:hidden}
+.tabs.multi .tab{line-height:1.3;padding-top:1px;padding-bottom:1px}
+.tabs.multi .tab[aria-selected=true]{top:0}
+.tab.plus{box-shadow:none;background:#0003cf40}
+
+.view.sv{background:transparent}
+.view.sv>.pg,.view.sv>.pgx{height:100%}
+.view.sv>.pg{display:flex;flex-direction:column}
+.view.sv>.pg>.sres{flex:1;min-height:0;height:auto}
+.sres{min-height:200px}
+.tabs.multi{min-height:50px;padding:6px 8px 3px}
+.tabs.multi .tab{font-size:27px;padding:2px 14px;line-height:1.25}
+.tabs.multi .tab .tx{margin-left:9px}
+.tabs.multi .tab.plus{padding:2px 15px}
